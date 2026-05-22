@@ -33,10 +33,10 @@ export default function TextLibraryPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">背书</h2>
-          <p className="text-gray-500 mt-1">递进式回忆，逐句逐段攻克长篇内容</p>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900">背书</h2>
+          <p className="text-sm text-gray-500 mt-1">递进式回忆，逐句逐段攻克长篇内容</p>
         </div>
         <Button onClick={() => setShowCreate(true)}>添加篇章</Button>
       </div>
@@ -47,7 +47,7 @@ export default function TextLibraryPage() {
             <Link
               key={passage.id}
               to={`/texts/${passage.id}`}
-              className={`bg-white rounded-xl p-5 shadow-sm border transition-all flex items-center justify-between ${
+              className={`bg-white rounded-xl p-4 md:p-5 shadow-sm border transition-all flex items-center justify-between flex-wrap gap-2 ${
                 passage.mode === 'urgent'
                   ? 'border-red-200 hover:border-red-300'
                   : 'border-gray-100 hover:border-emerald-200'

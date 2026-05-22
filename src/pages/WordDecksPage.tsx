@@ -21,10 +21,10 @@ export default function WordDecksPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">背单词</h2>
-          <p className="text-gray-500 mt-1">基于间隔重复的抽认卡系统</p>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900">背单词</h2>
+          <p className="text-sm text-gray-500 mt-1">基于间隔重复的抽认卡系统</p>
         </div>
         <Button onClick={() => setShowCreate(true)}>新建牌组</Button>
       </div>
