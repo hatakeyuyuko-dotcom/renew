@@ -5,8 +5,19 @@ body {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Prevent iOS text size adjust after orientation change */
+  -webkit-text-size-adjust: 100%;
 }
 
 #root {
   min-height: 100vh;
+  /* Use dvh for mobile browsers with dynamic viewport */
+  min-height: 100dvh;
+}
+
+/* Prevent pull-to-refresh on mobile during review */
+@media (max-width: 767px) {
+  html {
+    overscroll-behavior: none;
+  }
 }

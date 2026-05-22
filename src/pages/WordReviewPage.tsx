@@ -9,6 +9,8 @@ import SessionProgress from '../components/review/SessionProgress'
 import SessionSummary from '../components/review/SessionSummary'
 import Button from '../components/shared/Button'
 import Spinner from '../components/shared/Spinner'
+import AudioPlayer from '../components/shared/AudioPlayer'
+import { useSpeech } from '../hooks/useSpeech'
 import type { Word } from '../models/word'
 
 export default function WordReviewPage() {
@@ -18,6 +20,7 @@ export default function WordReviewPage() {
   const deck = useDeck(deckId)
   const [qualityCounts, setQualityCounts] = useState<Record<number, number>>({})
   const [feynmanText, setFeynmanText] = useState('')
+  const speech = useSpeech()
 
   useEffect(() => {
     if (deckId) {
@@ -25,21 +28,34 @@ export default function WordReviewPage() {
     }
   }, [deckId])
 
+  const word = session.currentItem as Word | null
+
+  useEffect(() => {
+    speech.stop()
+  }, [word?.id])
+
+  const speakWord = useCallback(() => {
+    if (!word) return
+    const text = session.isFlipped ? word.back : word.front
+    speech.speak(text)
+  }, [word, session.isFlipped, speech])
+
   const handleRating = useCallback(async (quality: number) => {
     setQualityCounts((prev) => ({ ...prev, [quality]: (prev[quality] || 0) + 1 }))
-    const word = session.currentItem as Word | null
-    if (word && feynmanText.trim()) {
+    const w = session.currentItem as Word | null
+    if (w && feynmanText.trim()) {
       await createQuickFeynmanSession({
         targetType: 'word',
-        targetId: word.id,
-        targetTitle: word.front,
-        originalMaterial: `${word.front}: ${word.back}`,
+        targetId: w.id,
+        targetTitle: w.front,
+        originalMaterial: `${w.front}: ${w.back}`,
         explanation: feynmanText.trim(),
       })
     }
     setFeynmanText('')
+    speech.stop()
     await session.submitRating(quality)
-  }, [session, feynmanText])
+  }, [session, feynmanText, speech])
 
   if (session.isLoading) return <Spinner className="py-20" />
 
@@ -59,15 +75,13 @@ export default function WordReviewPage() {
     )
   }
 
-  const word = session.currentItem as Word | null
-
   if (!word) return <Spinner className="py-20" />
 
   const isUrgent = deck?.mode === 'urgent'
 
   return (
     <div className="max-w-lg mx-auto">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div>
           <span className="text-sm text-gray-500">{deck?.name || '复习'}</span>
           {isUrgent && (
@@ -76,6 +90,16 @@ export default function WordReviewPage() {
             </span>
           )}
         </div>
+        <AudioPlayer
+          variant="button"
+          state={speech.state}
+          rate={speech.rate}
+          onPlay={speakWord}
+          onPause={speech.pause}
+          onResume={speech.resume}
+          onStop={speech.stop}
+          onRateChange={speech.setRate}
+        />
       </div>
 
       <SessionProgress current={session.currentIndex + 1} total={session.totalCount} />
@@ -96,7 +120,6 @@ export default function WordReviewPage() {
 
       {session.showAnswerPhase && (
         <div className="space-y-4">
-          {/* Feynman inline - always visible after flip */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-sm font-semibold text-amber-800">🧠 费曼解释（选填）</span>

@@ -12,12 +12,21 @@ const navItems = [
 ]
 
 export default function Sidebar() {
-  const { sidebarOpen } = useUIStore()
+  const { sidebarOpen, setSidebarOpen } = useUIStore()
 
-  if (!sidebarOpen) return null
+  const handleNav = () => {
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false)
+    }
+  }
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0 shrink-0">
+    <aside
+      className={`w-64 bg-white border-r border-gray-200 flex flex-col h-screen shrink-0
+        fixed top-0 left-0 z-40 transition-transform duration-200
+        md:relative md:z-auto md:translate-x-0
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:hidden'}`}
+    >
       <div className="p-6 border-b border-gray-100">
         <h1 className="text-xl font-bold text-indigo-600 tracking-tight">背背</h1>
         <p className="text-xs text-gray-400 mt-0.5">科学背诵 · 费曼学习法</p>
@@ -29,6 +38,7 @@ export default function Sidebar() {
             key={item.to}
             to={item.to}
             end={item.to === '/'}
+            onClick={handleNav}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive

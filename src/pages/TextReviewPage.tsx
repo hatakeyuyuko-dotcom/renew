@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTextPassage, updateTextPassage } from '../hooks/useTexts'
 import { createQuickFeynmanSession } from '../hooks/useFeynmanSession'
@@ -10,6 +10,8 @@ import SelfAssessmentForm from '../components/text/SelfAssessmentForm'
 import SessionSummary from '../components/review/SessionSummary'
 import Button from '../components/shared/Button'
 import Spinner from '../components/shared/Spinner'
+import AudioPlayer from '../components/shared/AudioPlayer'
+import { useSpeech } from '../hooks/useSpeech'
 
 export default function TextReviewPage() {
   const { passageId } = useParams()
@@ -21,6 +23,8 @@ export default function TextReviewPage() {
   const [totalReviewed, setTotalReviewed] = useState(0)
   const [qualityCounts, setQualityCounts] = useState<Record<number, number>>({})
   const [feynmanText, setFeynmanText] = useState('')
+  const speech = useSpeech()
+  const initiatedRef = useRef(false)
 
   useEffect(() => {
     if (passage) {
@@ -29,9 +33,16 @@ export default function TextReviewPage() {
     }
   }, [passage])
 
+  // Auto-play initiated by user
+  const handlePlay = useCallback(() => {
+    initiatedRef.current = true
+    speech.speak(passage?.content || '')
+  }, [passage, speech])
+
   const handleSelfAssess = useCallback(async (quality: number, gaps: string) => {
     if (!passage) return
 
+    speech.stop()
     const now = Date.now()
     const sm2Result = sm2WithMode({
       quality,
@@ -46,7 +57,6 @@ export default function TextReviewPage() {
         ? recallLevel
         : Math.max(0, recallLevel - 1)
 
-    // Save Feynman explanation if provided
     if (feynmanText.trim()) {
       await createQuickFeynmanSession({
         targetType: 'text',
@@ -92,7 +102,7 @@ export default function TextReviewPage() {
       setRecallLevel(quality >= 4 ? Math.min(5, recallLevel + 1) : Math.max(0, recallLevel - 1))
       setPhase('recall')
     }
-  }, [passage, recallLevel, feynmanText])
+  }, [passage, recallLevel, feynmanText, speech])
 
   const handleAdvance = useCallback(() => {
     if (recallLevel >= 5) {
@@ -127,8 +137,8 @@ export default function TextReviewPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="mb-6">
-        <div className="flex items-center gap-3">
+      <div className="mb-4">
+        <div className="flex items-center gap-3 flex-wrap">
           <h3 className="text-lg font-semibold text-gray-900">{passage.title}</h3>
           {isUrgent && (
             <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium animate-pulse">
@@ -139,9 +149,23 @@ export default function TextReviewPage() {
         <p className="text-sm text-gray-400">递进式回忆背诵</p>
       </div>
 
+      {/* Audio player */}
+      <div className="mb-4">
+        <AudioPlayer
+          state={speech.state}
+          rate={speech.rate}
+          onPlay={handlePlay}
+          onPause={speech.pause}
+          onResume={speech.resume}
+          onStop={speech.stop}
+          onRateChange={speech.setRate}
+          label="听书背诵"
+        />
+      </div>
+
       <RecallProgressBar currentLevel={recallLevel} readonly />
 
-      <div className="mb-6">
+      <div className="mb-6 mt-4">
         <PassageViewer
           text={passage.content}
           recallLevel={recallLevel}
@@ -155,7 +179,6 @@ export default function TextReviewPage() {
 
       {phase === 'recall' && (
         <>
-          {/* Feynman inline - always visible */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-sm font-semibold text-amber-800">🧠 费曼复述（选填）</span>
@@ -166,11 +189,11 @@ export default function TextReviewPage() {
               onChange={(e) => setFeynmanText(e.target.value)}
               rows={2}
               className="w-full border border-amber-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-amber-500 outline-none bg-white resize-none"
-              placeholder={`用最简单的话复述这段话的核心内容...`}
+              placeholder="用最简单的话复述这段话的核心内容..."
             />
           </div>
 
-          <div className="flex justify-center gap-3 mb-6">
+          <div className="flex justify-center gap-3 mb-6 flex-wrap">
             <Button variant="secondary" onClick={handleAdvance}>
               {recallLevel >= 5 ? '完成' : '进入下一级别'}
             </Button>
